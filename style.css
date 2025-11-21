@@ -1,0 +1,500 @@
+/* Global Styles - Simple Game Show Design */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Verdana', 'Arial', sans-serif;
+    background: #1a1a2e;
+    min-height: 100vh;
+    color: #fff;
+    overflow-x: hidden;
+}
+
+/* Curtain Background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        repeating-linear-gradient(
+            90deg,
+            #8b0000 0px,
+            #8b0000 20px,
+            #dc143c 20px,
+            #dc143c 40px
+        );
+    z-index: -1;
+    opacity: 0.3;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Simple Header */
+header {
+    text-align: center;
+    margin-bottom: 20px;
+    background: rgba(255, 215, 0, 0.1);
+    padding: 15px;
+    border-radius: 5px;
+}
+
+header h1 {
+    font-size: 2.5em;
+    color: #ffd700;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 5px;
+}
+
+header h2 {
+    font-size: 1em;
+    color: #fff;
+    font-weight: normal;
+}
+
+/* Game Info - Simple */
+.game-status {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.status-item {
+    text-align: center;
+}
+
+.status-item h3 {
+    font-size: 0.9em;
+    color: #ffd700;
+    margin-bottom: 5px;
+}
+
+.status-item p {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+/* Values Board */
+.values-board {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 5px;
+    margin: 20px 0;
+    border: 2px solid #ffd700;
+}
+
+.values-board h3 {
+    color: #ffd700;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.3em;
+}
+
+.values-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.value-item {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.9em;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.value-item.eliminated {
+    text-decoration: line-through;
+    color: #888;
+    background: rgba(255, 0, 0, 0.2);
+    opacity: 0.6;
+}
+
+.value-item.available {
+    color: #fff;
+    background: rgba(0, 255, 0, 0.1);
+}
+
+/* Curtain Behind Briefcases */
+.stage-area {
+    position: relative;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 30px;
+    border-radius: 5px;
+    margin: 20px 0;
+    border: 3px solid #ffd700;
+}
+
+.curtain {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        repeating-linear-gradient(
+            45deg,
+            #dc143c 0px,
+            #dc143c 30px,
+            #8b0000 30px,
+            #8b0000 60px
+        );
+    border-radius: 5px;
+    opacity: 0.4;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Briefcases Container */
+.briefcases-container {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.briefcase-item {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 0.8;
+    transition: transform 0.2s;
+}
+
+.briefcase-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #fff;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid #ffd700;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.briefcase-link:hover {
+    transform: scale(1.05);
+    background: rgba(255, 215, 0, 0.2);
+    border-color: #fff;
+}
+
+.briefcase-emoji {
+    font-size: 3em;
+    margin-bottom: 5px;
+}
+
+.briefcase-number-label {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #ffd700;
+}
+
+/* Selected Briefcase */
+.briefcase-item.selected .briefcase-link {
+    background: rgba(255, 215, 0, 0.3);
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 15px #ffd700;
+    animation: glow 2s infinite;
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 15px #ffd700; }
+    50% { box-shadow: 0 0 25px #ffd700; }
+}
+
+/* Opened Briefcase */
+.briefcase-item.opened {
+    background: rgba(100, 100, 100, 0.8);
+    border: 2px solid #666;
+    border-radius: 5px;
+}
+
+.briefcase-opened {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    color: #fff;
+}
+
+.briefcase-opened .briefcase-number {
+    font-size: 0.8em;
+    color: #ccc;
+    margin-bottom: 5px;
+}
+
+.briefcase-opened .briefcase-value {
+    font-size: 0.75em;
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    border-radius: 3px;
+    word-break: break-word;
+}
+
+/* Banker Offer */
+.banker-offer {
+    background: rgba(255, 215, 0, 0.2);
+    border: 3px solid #ffd700;
+    border-radius: 5px;
+    padding: 25px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.banker-message h2 {
+    font-size: 1.5em;
+    color: #ffd700;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+}
+
+.offer-amount {
+    font-size: 3.5em;
+    font-weight: bold;
+    color: #fff;
+    margin: 15px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.offer-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 12px 30px;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 5px;
+    border: 2px solid;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.btn-deal {
+    background: #4CAF50;
+    color: #fff;
+    border-color: #4CAF50;
+}
+
+.btn-deal:hover {
+    background: #45a049;
+    transform: scale(1.05);
+}
+
+.btn-no-deal {
+    background: #f44336;
+    color: #fff;
+    border-color: #f44336;
+}
+
+.btn-no-deal:hover {
+    background: #da190b;
+    transform: scale(1.05);
+}
+
+.btn-restart {
+    background: #2196F3;
+    color: #fff;
+    border-color: #2196F3;
+}
+
+.btn-restart:hover {
+    background: #0b7dda;
+    transform: scale(1.05);
+}
+
+/* Instruction */
+.instruction {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 5px;
+    margin: 20px 0;
+    text-align: center;
+    border-left: 4px solid #ffd700;
+}
+
+.instruction h3 {
+    color: #ffd700;
+    margin-bottom: 8px;
+    font-size: 1.2em;
+}
+
+.instruction p {
+    color: #fff;
+    font-size: 0.95em;
+}
+
+.instruction.final-round {
+    background: rgba(255, 215, 0, 0.2);
+    border-left: 4px solid #ffd700;
+}
+
+/* Game Over */
+.game-over {
+    text-align: center;
+    padding: 30px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+    border: 3px solid #ffd700;
+}
+
+.game-over h2 {
+    font-size: 2.5em;
+    color: #ffd700;
+    margin-bottom: 20px;
+}
+
+.result {
+    background: rgba(255, 215, 0, 0.1);
+    padding: 25px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.result p {
+    font-size: 1.3em;
+    color: #fff;
+    margin-bottom: 15px;
+}
+
+.final-amount {
+    font-size: 4em;
+    font-weight: bold;
+    color: #ffd700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.offer-history {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    border-radius: 5px;
+    margin: 20px auto;
+    max-width: 500px;
+}
+
+.offer-history h3 {
+    color: #ffd700;
+    margin-bottom: 15px;
+}
+
+.offer-history table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.offer-history th,
+.offer-history td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+    color: #fff;
+}
+
+.offer-history th {
+    background: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+}
+
+/* Events Panel */
+.events-panel {
+    background: rgba(255, 165, 0, 0.1);
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 165, 0, 0.5);
+}
+
+.events-panel h4 {
+    color: #ffa500;
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+.event-item {
+    color: #fff;
+    font-size: 0.9em;
+    margin: 5px 0;
+    padding: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .briefcases-container {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+    
+    .briefcase-emoji {
+        font-size: 2em;
+    }
+    
+    .briefcase-number-label {
+        font-size: 0.8em;
+    }
+    
+    header h1 {
+        font-size: 1.8em;
+    }
+    
+    .offer-amount {
+        font-size: 2.5em;
+    }
+    
+    .final-amount {
+        font-size: 3em;
+    }
+    
+    .values-list {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .briefcases-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .briefcase-emoji {
+        font-size: 1.8em;
+    }
+    
+    .values-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
