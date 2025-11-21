@@ -221,6 +221,19 @@ header h2 {
     animation: glow 2s infinite;
 }
 
+/* Lucky Briefcase */
+.briefcase-item.lucky-briefcase .briefcase-link {
+    background: rgba(76, 175, 80, 0.3);
+    border: 3px solid #4CAF50;
+    box-shadow: 0 0 15px #4CAF50;
+    animation: glow-lucky 2s infinite;
+}
+
+@keyframes glow-lucky {
+    0%, 100% { box-shadow: 0 0 15px #4CAF50; border-color: #4CAF50; }
+    50% { box-shadow: 0 0 25px #4CAF50, 0 0 35px #4CAF50; border-color: #81C784; }
+}
+
 @keyframes glow {
     0%, 100% { box-shadow: 0 0 15px #ffd700; }
     50% { box-shadow: 0 0 25px #ffd700; }
@@ -336,6 +349,130 @@ header h2 {
 .btn-restart:hover {
     background: #0b7dda;
     transform: scale(1.05);
+}
+
+.btn-crazy {
+    padding: 12px 30px;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 5px;
+    border: 2px solid;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    color: #fff;
+    animation: pulse-crazy 2s infinite;
+}
+
+@keyframes pulse-crazy {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+    50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+}
+
+.btn-crazy:hover {
+    transform: scale(1.1);
+    animation: none;
+}
+
+/* Surprise Events */
+.surprise-events {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 215, 0, 0.2);
+    border: 2px solid #ffd700;
+    border-radius: 5px;
+}
+
+.surprise-item {
+    padding: 10px;
+    margin: 8px 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+    font-weight: bold;
+    animation: slide-in 0.5s ease-out;
+    border-left: 4px solid #ffd700;
+}
+
+@keyframes slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.surprise-mystery_swap {
+    border-left-color: #9c27b0;
+    background: rgba(156, 39, 176, 0.2);
+}
+
+.surprise-double_or_nothing {
+    border-left-color: #ff6b00;
+    background: rgba(255, 107, 0, 0.2);
+}
+
+.surprise-lucky {
+    border-left-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.2);
+}
+
+.surprise-bonus {
+    border-left-color: #ff9800;
+    background: rgba(255, 152, 0, 0.2);
+}
+
+.surprise-jackpot {
+    border-left-color: #ffd700;
+    background: rgba(255, 215, 0, 0.3);
+    animation: glow-gold 1.5s infinite;
+}
+
+@keyframes glow-gold {
+    0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(255, 215, 0, 1); }
+}
+
+.surprise-streak {
+    border-left-color: #f44336;
+    background: rgba(244, 67, 54, 0.2);
+}
+
+.surprise-power {
+    border-left-color: #2196F3;
+    background: rgba(33, 150, 243, 0.2);
+}
+
+/* Power-Up Panel */
+.power-up-panel {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 152, 0, 0.3));
+    border: 3px solid #ffd700;
+    border-radius: 5px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+    animation: pulse-panel 2s infinite;
+}
+
+@keyframes pulse-panel {
+    0%, 100% { border-color: #ffd700; }
+    50% { border-color: #fff; }
+}
+
+.power-up-panel h3 {
+    color: #ffd700;
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.power-up-panel p {
+    color: #fff;
+    font-size: 1.1em;
+    margin-bottom: 15px;
 }
 
 /* Instruction */

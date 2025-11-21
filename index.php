@@ -33,6 +33,46 @@ if (!isset($_SESSION['game_started'])) {
             'symbol' => getBriefcaseSymbol($i)
         ];
     }
+    
+    // Initialize crazy features variables
+    $_SESSION['power_ups'] = [];
+    $_SESSION['streak_count'] = 0;
+    $_SESSION['double_or_nothing_available'] = false;
+    $_SESSION['mystery_swap_available'] = false;
+    $_SESSION['lucky_briefcase'] = null;
+    $_SESSION['bonus_round'] = false;
+    $_SESSION['jackpot_multiplier'] = 1;
+    $_SESSION['surprise_events'] = [];
+    $_SESSION['used_power_ups'] = [];
+}
+
+// Initialize variables if they don't exist (for existing sessions) - MUST be before any code uses them
+if (!isset($_SESSION['streak_count'])) {
+    $_SESSION['streak_count'] = 0;
+}
+if (!isset($_SESSION['double_or_nothing_available'])) {
+    $_SESSION['double_or_nothing_available'] = false;
+}
+if (!isset($_SESSION['mystery_swap_available'])) {
+    $_SESSION['mystery_swap_available'] = false;
+}
+if (!isset($_SESSION['lucky_briefcase'])) {
+    $_SESSION['lucky_briefcase'] = null;
+}
+if (!isset($_SESSION['bonus_round'])) {
+    $_SESSION['bonus_round'] = false;
+}
+if (!isset($_SESSION['jackpot_multiplier'])) {
+    $_SESSION['jackpot_multiplier'] = 1;
+}
+if (!isset($_SESSION['surprise_events'])) {
+    $_SESSION['surprise_events'] = [];
+}
+if (!isset($_SESSION['used_power_ups'])) {
+    $_SESSION['used_power_ups'] = [];
+}
+if (!isset($_SESSION['power_ups'])) {
+    $_SESSION['power_ups'] = [];
 }
 
 // Handle game actions
@@ -77,6 +117,8 @@ if (isset($_GET['action'])) {
                             generateBankerOffer();
                             // Trigger volatile market event
                             triggerVolatileEvent();
+                            // Trigger crazy features
+                            triggerCrazyFeatures();
                         }
                     }
                 }
@@ -84,6 +126,10 @@ if (isset($_GET['action'])) {
             break;
             
         case 'deal':
+            // Apply jackpot multiplier if active
+            if (isset($_SESSION['jackpot_multiplier']) && $_SESSION['jackpot_multiplier'] > 1) {
+                $_SESSION['banker_offer'] = applyJackpotMultiplier($_SESSION['banker_offer']);
+            }
             $_SESSION['game_over'] = true;
             $_SESSION['final_decision'] = 'deal';
             $_SESSION['player_choice'] = 'deal';
@@ -113,6 +159,9 @@ if (isset($_GET['action'])) {
                 
                 // Progressive value revelation - reveal some values
                 progressiveRevelation();
+                
+                // Increase streak for rejecting offers
+                $_SESSION['streak_count']++;
             }
             
             $_SESSION['player_choice'] = 'no_deal';
@@ -121,6 +170,32 @@ if (isset($_GET['action'])) {
         case 'final_reveal':
             $_SESSION['game_over'] = true;
             $_SESSION['final_decision'] = 'final_reveal';
+            break;
+            
+        case 'mystery_swap':
+            if ($_SESSION['mystery_swap_available']) {
+                performMysterySwap();
+                $_SESSION['mystery_swap_available'] = false;
+                $_SESSION['used_power_ups'][] = 'mystery_swap';
+            }
+            break;
+            
+        case 'double_or_nothing':
+            if ($_SESSION['double_or_nothing_available'] && $_SESSION['banker_offer'] !== null) {
+                performDoubleOrNothing();
+            }
+            break;
+            
+        case 'activate_lucky':
+            if ($_SESSION['lucky_briefcase'] !== null) {
+                activateLuckyBriefcase();
+            }
+            break;
+            
+        case 'bonus_round':
+            if ($_SESSION['bonus_round']) {
+                activateBonusRound();
+            }
             break;
             
         case 'restart':
@@ -180,6 +255,12 @@ function generateBankerOffer() {
         ];
     } else {
         $offer = $base_offer * $volatility_modifier * $pressure_modifier;
+    }
+    
+    // Streak bonus - if player rejected multiple offers
+    if (isset($_SESSION['streak_count']) && $_SESSION['streak_count'] >= 3) {
+        $streak_bonus = 1 + ($_SESSION['streak_count'] * 0.05); // 5% per streak
+        $offer *= $streak_bonus;
     }
     
     // Ensure offer is reasonable
@@ -318,6 +399,185 @@ function formatMoney($amount) {
     return '$' . number_format($amount, 2);
 }
 
+// CRAZY FEATURES FUNCTIONS
+
+function triggerCrazyFeatures() {
+    // 30% chance for any crazy feature
+    $roll = rand(1, 100);
+    
+    if ($roll <= 10) {
+        // Mystery Swap - 10% chance
+        $_SESSION['mystery_swap_available'] = true;
+        $_SESSION['surprise_events'][] = [
+            'type' => 'mystery_swap',
+            'message' => '🎲 Mystery Swap Available! Swap your briefcase with another!',
+            'icon' => '🎲'
+        ];
+    } elseif ($roll <= 20) {
+        // Double or Nothing - 10% chance (only if offer exists)
+        if ($_SESSION['banker_offer'] !== null) {
+            $_SESSION['double_or_nothing_available'] = true;
+            $_SESSION['surprise_events'][] = [
+                'type' => 'double_or_nothing',
+                'message' => '💰 Double or Nothing! Double your winnings or lose everything!',
+                'icon' => '💰'
+            ];
+        }
+    } elseif ($roll <= 30) {
+        // Lucky Briefcase - 10% chance
+        $closed_cases = [];
+        foreach ($_SESSION['briefcases'] as $num => $case) {
+            if ($case['status'] == 'closed' && $num != $_SESSION['selected_briefcase']) {
+                $closed_cases[] = $num;
+            }
+        }
+        if (count($closed_cases) > 0) {
+            $_SESSION['lucky_briefcase'] = $closed_cases[array_rand($closed_cases)];
+            $_SESSION['surprise_events'][] = [
+                'type' => 'lucky',
+                'message' => '🍀 Lucky Briefcase Found! Briefcase #' . $_SESSION['lucky_briefcase'] . ' has a bonus!',
+                'icon' => '🍀'
+            ];
+        }
+    } elseif ($roll <= 35) {
+        // Bonus Round - 5% chance
+        $_SESSION['bonus_round'] = true;
+        $_SESSION['surprise_events'][] = [
+            'type' => 'bonus',
+            'message' => '🎁 BONUS ROUND! Eliminate one extra briefcase for free!',
+            'icon' => '🎁'
+        ];
+    } elseif ($roll <= 45) {
+        // Jackpot Multiplier - 10% chance
+        $_SESSION['jackpot_multiplier'] = 1.5 + (rand(1, 5) * 0.5); // 1.5x to 3.5x
+        $_SESSION['surprise_events'][] = [
+            'type' => 'jackpot',
+            'message' => '🎰 JACKPOT MULTIPLIER! All winnings x' . $_SESSION['jackpot_multiplier'] . '!',
+            'icon' => '🎰'
+        ];
+    } elseif ($roll <= 50) {
+        // Streak Bonus
+        if (isset($_SESSION['streak_count']) && $_SESSION['streak_count'] >= 3) {
+            $_SESSION['surprise_events'][] = [
+                'type' => 'streak',
+                'message' => '🔥 STREAK BONUS! ' . $_SESSION['streak_count'] . ' consecutive No Deals! +25% to next offer!',
+                'icon' => '🔥'
+            ];
+        }
+    } elseif ($roll <= 60) {
+        // Surprise Reveal - reveal 2 briefcases at once
+        $_SESSION['surprise_events'][] = [
+            'type' => 'reveal',
+            'message' => '✨ SURPRISE! Banker reveals one extra briefcase next round!',
+            'icon' => '✨'
+        ];
+        // Reduce cases to eliminate by 1
+        if ($_SESSION['cases_to_eliminate'] > 1) {
+            $_SESSION['cases_to_eliminate']--;
+        }
+    } elseif ($roll <= 65) {
+        // Power Briefcase - one briefcase doubles in value
+        $closed_cases = [];
+        foreach ($_SESSION['briefcases'] as $num => $case) {
+            if (($case['status'] == 'closed' || $case['status'] == 'selected') && $num != $_SESSION['selected_briefcase']) {
+                $closed_cases[] = $num;
+            }
+        }
+        if (count($closed_cases) > 0) {
+            $power_case = $closed_cases[array_rand($closed_cases)];
+            $_SESSION['briefcases'][$power_case]['value'] *= 2;
+            $_SESSION['surprise_events'][] = [
+                'type' => 'power',
+                'message' => '⚡ POWER BRIEFCASE! Briefcase #' . $power_case . ' value doubled!',
+                'icon' => '⚡'
+            ];
+        }
+    }
+}
+
+function performMysterySwap() {
+    $closed_cases = [];
+    foreach ($_SESSION['briefcases'] as $num => $case) {
+        if ($case['status'] == 'closed' && $num != $_SESSION['selected_briefcase']) {
+            $closed_cases[] = $num;
+        }
+    }
+    
+    if (count($closed_cases) > 0) {
+        $swap_case = $closed_cases[array_rand($closed_cases)];
+        
+        // Swap values
+        $temp = $_SESSION['briefcases'][$_SESSION['selected_briefcase']]['value'];
+        $_SESSION['briefcases'][$_SESSION['selected_briefcase']]['value'] = $_SESSION['briefcases'][$swap_case]['value'];
+        $_SESSION['briefcases'][$swap_case]['value'] = $temp;
+        
+        $_SESSION['surprise_events'][] = [
+            'type' => 'swap_done',
+            'message' => '🎲 Mystery Swap Complete! Your briefcase swapped with #' . $swap_case . '!',
+            'icon' => '🎲'
+        ];
+    }
+}
+
+function performDoubleOrNothing() {
+    if (rand(1, 2) == 1) {
+        // Win - double the offer
+        $_SESSION['banker_offer'] *= 2;
+        $_SESSION['double_or_nothing_available'] = false;
+        $_SESSION['surprise_events'][] = [
+            'type' => 'double_win',
+            'message' => '🎉 DOUBLE OR NOTHING WON! Offer doubled to ' . formatMoney($_SESSION['banker_offer'] * 1000) . '!',
+            'icon' => '🎉'
+        ];
+    } else {
+        // Lose - no deal, continue game
+        $_SESSION['banker_offer'] = null;
+        $_SESSION['double_or_nothing_available'] = false;
+        $_SESSION['cases_this_round'] = 0;
+        $_SESSION['round']++;
+        adjustRoundProgression();
+        $_SESSION['surprise_events'][] = [
+            'type' => 'double_lose',
+            'message' => '😱 DOUBLE OR NOTHING LOST! No deal, continue game!',
+            'icon' => '😱'
+        ];
+    }
+}
+
+function activateLuckyBriefcase() {
+    if ($_SESSION['lucky_briefcase'] !== null) {
+        // Add bonus to banker's next offer
+        if ($_SESSION['banker_offer'] !== null) {
+            $_SESSION['banker_offer'] *= 1.5; // 50% bonus
+        }
+        
+        $_SESSION['surprise_events'][] = [
+            'type' => 'lucky_activated',
+            'message' => '🍀 Lucky Briefcase activated! +50% bonus to current offer!',
+            'icon' => '🍀'
+        ];
+        
+        $_SESSION['lucky_briefcase'] = null;
+    }
+}
+
+function activateBonusRound() {
+    // Give player one free briefcase elimination
+    $_SESSION['bonus_round'] = false;
+    $_SESSION['cases_to_eliminate']--; // Reduce by 1 for this round
+    
+    $_SESSION['surprise_events'][] = [
+        'type' => 'bonus_activated',
+        'message' => '🎁 Bonus Round! Eliminate one fewer briefcase this round!',
+        'icon' => '🎁'
+    ];
+}
+
+// Apply jackpot multiplier to final winnings
+function applyJackpotMultiplier($amount) {
+    return $amount * $_SESSION['jackpot_multiplier'];
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -359,6 +619,20 @@ function formatMoney($amount) {
                         </div>
                     </div>
                 <?php endif; ?>
+                
+                <?php if (isset($_SESSION['streak_count']) && $_SESSION['streak_count'] > 0): ?>
+                    <div class="status-item">
+                        <h3>Streak</h3>
+                        <p><?php echo $_SESSION['streak_count']; ?> 🔥</p>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if (isset($_SESSION['jackpot_multiplier']) && $_SESSION['jackpot_multiplier'] > 1): ?>
+                    <div class="status-item">
+                        <h3>Multiplier</h3>
+                        <p>x<?php echo $_SESSION['jackpot_multiplier']; ?> 🎰</p>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <?php
@@ -388,6 +662,16 @@ function formatMoney($amount) {
                 </div>
             </div>
 
+            <?php if (isset($_SESSION['surprise_events']) && count($_SESSION['surprise_events']) > 0): ?>
+                <div class="surprise-events">
+                    <?php foreach (array_slice($_SESSION['surprise_events'], -3) as $event): ?>
+                        <div class="surprise-item surprise-<?php echo $event['type']; ?>">
+                            <?php echo $event['icon']; ?> <?php echo htmlspecialchars($event['message']); ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+            
             <?php if ($_SESSION['banker_offer'] !== null): ?>
                 <div class="banker-offer">
                     <h2>The Banker's Offer</h2>
@@ -395,6 +679,14 @@ function formatMoney($amount) {
                     
                     <?php if (count($_SESSION['bluff_offers']) > 0 && end($_SESSION['bluff_offers'])['round'] == $_SESSION['round']): ?>
                         <p style="color: #ff6b6b; margin: 10px 0; font-size: 0.9em;">⚠️ Banker might be bluffing!</p>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($_SESSION['double_or_nothing_available']) && $_SESSION['double_or_nothing_available']): ?>
+                        <a href="?action=double_or_nothing" class="btn btn-crazy" style="background: #ff6b00; margin-bottom: 10px; display: block; text-align: center;">💰 DOUBLE OR NOTHING</a>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($_SESSION['lucky_briefcase']) && $_SESSION['lucky_briefcase'] !== null): ?>
+                        <a href="?action=activate_lucky" class="btn btn-crazy" style="background: #4CAF50; margin-bottom: 10px; display: block; text-align: center;">🍀 ACTIVATE LUCKY BRIEFCASE #<?php echo $_SESSION['lucky_briefcase']; ?></a>
                     <?php endif; ?>
                     
                     <div class="offer-buttons">
@@ -412,6 +704,22 @@ function formatMoney($amount) {
                             <a href="?action=no_deal" class="btn btn-no-deal">NO DEAL</a>
                         <?php endif; ?>
                     </div>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($_SESSION['mystery_swap_available']) && $_SESSION['mystery_swap_available']): ?>
+                <div class="power-up-panel">
+                    <h3>🎲 Mystery Swap Available!</h3>
+                    <p>Swap your briefcase with a random closed briefcase!</p>
+                    <a href="?action=mystery_swap" class="btn btn-crazy" style="background: #9c27b0; margin-top: 10px; display: inline-block;">ACTIVATE MYSTERY SWAP</a>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($_SESSION['bonus_round']) && $_SESSION['bonus_round']): ?>
+                <div class="power-up-panel">
+                    <h3>🎁 Bonus Round Active!</h3>
+                    <p>Eliminate one fewer briefcase this round!</p>
+                    <a href="?action=bonus_round" class="btn btn-crazy" style="background: #ff9800; margin-top: 10px; display: inline-block;">ACTIVATE BONUS ROUND</a>
                 </div>
             <?php endif; ?>
 
@@ -453,6 +761,11 @@ function formatMoney($amount) {
                     } elseif ($case['status'] == 'selected') {
                         $class .= ' selected';
                     }
+                    
+                    // Add lucky briefcase class
+                    if (isset($_SESSION['lucky_briefcase']) && $_SESSION['lucky_briefcase'] == $i) {
+                        $class .= ' lucky-briefcase';
+                    }
                 ?>
                     <div class="<?php echo $class; ?>">
                         <?php if ($case['status'] == 'opened'): ?>
@@ -479,13 +792,27 @@ function formatMoney($amount) {
                 <?php if ($_SESSION['final_decision'] == 'deal'): ?>
                     <div class="result">
                         <p>You accepted the deal!</p>
-                        <div class="final-amount"><?php echo formatMoney($_SESSION['banker_offer'] * 1000); ?></div>
+                        <?php 
+                        $final_winnings = $_SESSION['banker_offer'];
+                        if (isset($_SESSION['jackpot_multiplier']) && $_SESSION['jackpot_multiplier'] > 1) {
+                            $final_winnings = applyJackpotMultiplier($final_winnings);
+                            echo '<p style="font-size: 0.8em; color: #ffd700;">Jackpot Multiplier Applied: x' . $_SESSION['jackpot_multiplier'] . '</p>';
+                        }
+                        ?>
+                        <div class="final-amount"><?php echo formatMoney($final_winnings * 1000); ?></div>
                     </div>
                 <?php else: ?>
                     <div class="result">
                         <p>Your briefcase (#<?php echo $_SESSION['selected_briefcase']; ?>) contains:</p>
+                        <?php 
+                        $final_winnings = $_SESSION['briefcases'][$_SESSION['selected_briefcase']]['value'];
+                        if (isset($_SESSION['jackpot_multiplier']) && $_SESSION['jackpot_multiplier'] > 1) {
+                            $final_winnings = applyJackpotMultiplier($final_winnings);
+                            echo '<p style="font-size: 0.8em; color: #ffd700;">Jackpot Multiplier Applied: x' . $_SESSION['jackpot_multiplier'] . '</p>';
+                        }
+                        ?>
                         <div class="final-amount">
-                            <?php echo formatMoney($_SESSION['briefcases'][$_SESSION['selected_briefcase']]['value'] * 1000); ?>
+                            <?php echo formatMoney($final_winnings * 1000); ?>
                         </div>
                     </div>
                 <?php endif; ?>
