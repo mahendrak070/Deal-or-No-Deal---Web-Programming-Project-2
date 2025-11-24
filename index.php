@@ -21,10 +21,10 @@ if (!isset($_SESSION['game_started'])) {
     $_SESSION['round_progression'] = [];
     $_SESSION['player_choice'] = null;
     
-    // Standard Deal or No Deal values (in thousands)
+    // Standard Deal or No Deal values (in thousands) 
     $values = [0.01, 1, 5, 10, 25, 50, 75, 100, 200, 300, 400, 500, 750, 1000, 5000, 10000, 25000, 50000, 75000, 100000, 200000, 300000, 400000, 500000, 750000, 1000000];
     
-    // Shuffle and assign to 26 briefcases
+    // Shuffle and assign it to 26 briefcases
     shuffle($values);
     
     for ($i = 1; $i <= 26; $i++) {
